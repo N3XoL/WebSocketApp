@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ReactiveApp
+
+  data:
+    mongodb:
+      uri: mongodb://localhost/testBase
+      auto-index-creation: true
+logging:
+  level:
+    org.springframework.web.socket: debug
+    org.springframework.messaging: debug
