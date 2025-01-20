@@ -72,7 +72,7 @@ function sendPrivateMessage() {
 
     stompClient.publish({
         destination: "/app/private-chat",
-        body: JSON.stringify({'from':from, 'text':text, 'to':to}),
+        body: JSON.stringify({'from': from, 'text': text, 'to': to}),
     })
 
     document.getElementById('privateText').value = '';
@@ -84,7 +84,7 @@ function sendPublicMessage() {
 
     stompClient.publish({
         destination: "/app/chat",
-        body: JSON.stringify({'from':from, 'text':text}),
+        body: JSON.stringify({'from': from, 'text': text}),
     });
 
     document.getElementById('text').value = '';
@@ -95,16 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('form').addEventListener('submit', (e) => {
         e.preventDefault();
     })
-    document.getElementById('connect').addEventListener('click', (e) => {
+    document.getElementById('connect').addEventListener('click', () => {
         connect();
     })
-    document.getElementById('disconnect').addEventListener('click', (e) => {
+    document.getElementById('disconnect').addEventListener('click', () => {
         disconnect();
     })
-    document.getElementById('sendMessage').addEventListener('click', (e) => {
+    document.getElementById('sendMessage').addEventListener('click', () => {
         sendPublicMessage();
     })
-    document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
+    document.getElementById('sendPrivateMessage').addEventListener('click', () => {
         sendPrivateMessage();
     })
     document.getElementById('text').addEventListener('keypress', (e) => {
