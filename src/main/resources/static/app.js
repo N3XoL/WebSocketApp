@@ -1,5 +1,5 @@
 const stompClient = new StompJs.Client({
-    brokerURL: 'ws://localhost:8080/websocket',
+    brokerURL: getCurrentHost(),
 });
 
 stompClient.onConnect = (frame) => {
@@ -88,6 +88,15 @@ function sendPublicMessage() {
     });
 
     document.getElementById('text').value = '';
+}
+
+function getCurrentHost() {
+    const ngrokUrl = window.location.hostname;
+
+    if (ngrokUrl.includes('ngrok')) {
+        return `wss://${ngrokUrl}/websocket`;
+    }
+    return `ws://${window.location.host}/websocket}`
 }
 
 document.addEventListener('DOMContentLoaded', () => {
