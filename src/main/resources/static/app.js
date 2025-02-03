@@ -53,6 +53,17 @@ function showPublicMessage(message) {
     p.style.overflowWrap = 'break-word';
     p.appendChild(document.createTextNode("(" + message.time + ")"
         + " " + message.from + ": " + message.text));
+
+    if (message.imageData) {
+        const image = document.createElement('img');
+        image.src = message.imageData;
+        image.style.maxWidth = '200px';
+        image.style.height = 'auto';
+        image.style.marginTop = '5px';
+        image.style.display = 'block';
+        p.appendChild(image);
+    }
+
     response.appendChild(p);
 }
 
@@ -81,13 +92,32 @@ function sendPrivateMessage() {
 function sendPublicMessage() {
     const from = document.getElementById('name').value;
     const text = document.getElementById('text').value;
+    const imageInput = document.getElementById('imageInput');
+    const imageFile = imageInput.files[0];
+    let imageData = null;
+    let fileName = null;
 
-    stompClient.publish({
-        destination: "/app/chat",
-        body: JSON.stringify({'from': from, 'text': text}),
-    });
+    if (imageFile) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imageData = e.target.result;
+            fileName = imageFile.name;
+            sendMessageWithImage(from, text, imageData, fileName);
+        };
+        reader.readAsDataURL(imageFile);
+    } else {
+        sendMessageWithImage(from, text, null, null);
+    }
 
     document.getElementById('text').value = '';
+    document.getElementById('imageInput').value = '';
+}
+
+function sendMessageWithImage(from, text, imageData, fileName) {
+    stompClient.publish({
+        destination: "/app/chat",
+        body: JSON.stringify({'from': from, 'text': text, 'imageData': imageData, 'fileName': fileName}),
+    })
 }
 
 function getCurrentHost() {
@@ -96,7 +126,7 @@ function getCurrentHost() {
     if (ngrokUrl.includes('ngrok')) {
         return `wss://${ngrokUrl}/websocket`;
     }
-    return `ws://${window.location.host}/websocket}`
+    return `ws://${window.location.host}/websocket`
 }
 
 document.addEventListener('DOMContentLoaded', () => {

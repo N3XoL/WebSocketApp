@@ -2,6 +2,7 @@ package pl.kurs.websocketapp.config;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -14,11 +15,27 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
+import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
 
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Bean
+    public ServletServerContainerFactoryBean createWebSocketContainer() {
+        ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
+        container.setMaxTextMessageBufferSize(64 * 1024 * 1024);
+        container.setMaxBinaryMessageBufferSize(64 * 1024 * 1024);
+        return container;
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
+        registry.setMessageSizeLimit(64 * 1024 * 1024);
+        registry.setSendBufferSizeLimit(64 * 1024 * 1024);
+    }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
