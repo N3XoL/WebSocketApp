@@ -22,7 +22,7 @@ public class WebSocketService {
         OutputMessage messageOutput = new OutputMessage(
                 HtmlUtils.htmlEscape(privateMessage.getFrom()),
                 HtmlUtils.htmlEscape(privateMessage.getText()),
-                LocalDateTime.now().toString(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")),
                 null
         );
 

@@ -1,6 +1,29 @@
+if (!("Notification" in window)) {
+    console.error("Przeglądarka nie wspiera powiadomień.");
+} else if (Notification.permission !== "granted") {
+    Notification.requestPermission().then((permission) => {
+        if (permission !== "granted") {
+            console.warn("User didnt granted permission");
+        }
+    });
+}
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+        .then(function (registration) {
+            console.log('Service worker registered with scope:', registration.scope);
+        })
+        .catch(function (error) {
+            console.error('Registration of service worker failed:', error);
+        });
+}
+
 const stompClient = new StompJs.Client({
     brokerURL: getCurrentHost(),
 });
+
+let username = null;
+let isPageActive = true;
 
 stompClient.onConnect = (frame) => {
     setConnected(true);
@@ -34,7 +57,7 @@ function setConnected(connected) {
 }
 
 function connect() {
-    const username = document.getElementById('name').value;
+    username = document.getElementById('name').value;
     stompClient.connectHeaders = {
         'username': username
     };
@@ -74,6 +97,10 @@ function showPrivateMessage(message) {
     p.appendChild(document.createTextNode("(" + message.time + ")"
         + " " + message.from + ": " + message.text));
     response.appendChild(p);
+
+    if (!isPageActive && message.from !== username) {
+        showNotification(message)
+    }
 }
 
 function sendPrivateMessage() {
@@ -129,6 +156,14 @@ function getCurrentHost() {
     return `ws://${window.location.host}/websocket`
 }
 
+function showNotification(message) {
+    navigator.serviceWorker.ready.then(function (registration) {
+        registration.showNotification(`From: ${message.from}`, {
+            body: message.text
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     disconnect()
     document.querySelector('form').addEventListener('submit', (e) => {
@@ -152,4 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sendPublicMessage();
         }
     })
+})
+document.addEventListener('visibilitychange', () => {
+    isPageActive = !document.hidden
 })
