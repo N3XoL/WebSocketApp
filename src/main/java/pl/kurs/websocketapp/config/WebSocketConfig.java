@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -17,11 +18,15 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
+import pl.kurs.websocketapp.service.UserService;
+
+import java.security.Principal;
 
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    private final UserService userService;
 
     @Bean
     public ServletServerContainerFactoryBean createWebSocketContainer() {
@@ -61,7 +66,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String username = accessor.getFirstNativeHeader("username");
+                    if (username == null || username.trim().isEmpty()) {
+                        throw new MessageDeliveryException("Username is required!");
+                    }
+                    if (!userService.addUser(username.trim())) {
+                        throw new MessageDeliveryException("Username is taken!");
+                    }
                     accessor.setUser(() -> username);
+                } else if (accessor != null && StompCommand.DISCONNECT.equals(accessor.getCommand())) {
+                    Principal principal = accessor.getUser();
+                    if (principal != null) {
+                        userService.removeUser(principal.getName());
+                    }
                 }
                 return message;
             }

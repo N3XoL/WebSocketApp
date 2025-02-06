@@ -27,6 +27,7 @@ let isPageActive = true;
 
 stompClient.onConnect = (frame) => {
     setConnected(true);
+    clearError()
     console.log('Connected: ' + frame);
     stompClient.subscribe('/topic/messages', (message) => {
         showPublicMessage(JSON.parse(message.body));
@@ -41,9 +42,31 @@ stompClient.onWebSocketError = (error) => {
 };
 
 stompClient.onStompError = (frame) => {
-    console.error('Broker reported error: ' + frame.headers['message']);
-    console.error('Additional details: ' + frame.body);
+    const frameBody = frame.body;
+    const frameMessage = frame.headers['message'];
+
+    console.error('Broker reported error: ' + frameMessage);
+    console.error('Additional details: ' + frameBody);
+
+    if (frameMessage.includes('Username is required!')) {
+        showError(frameMessage);
+    } else if (frameMessage.includes('Username is taken!')) {
+        showError(frameMessage);
+    }
+    disconnect()
 };
+
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+function clearError() {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+}
 
 function setConnected(connected) {
     document.getElementById('connect').disabled = connected;
