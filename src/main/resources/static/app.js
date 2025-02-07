@@ -1,3 +1,7 @@
+let username = null;
+let isPageActive = true;
+let lastMessageFrom = null;
+
 if (!("Notification" in window)) {
     console.error("Przeglądarka nie wspiera powiadomień.");
 } else if (Notification.permission !== "granted") {
@@ -22,18 +26,18 @@ const stompClient = new StompJs.Client({
     brokerURL: getCurrentHost(),
 });
 
-let username = null;
-let isPageActive = true;
-
 stompClient.onConnect = (frame) => {
-    setConnected(true);
     clearError()
+    setConnected(true);
     console.log('Connected: ' + frame);
     stompClient.subscribe('/topic/messages', (message) => {
         showPublicMessage(JSON.parse(message.body));
     });
-    stompClient.subscribe('/user/topic/private-message', (message) => {
+    stompClient.subscribe('/user/queue/private', (message) => {
         showPrivateMessage(JSON.parse(message.body));
+    })
+    stompClient.subscribe('/user/queue/active-users', (message) => {
+        updateRecipientsList(JSON.parse(message.body));
     })
 };
 
@@ -116,6 +120,8 @@ function showPublicMessage(message) {
 function showPrivateMessage(message) {
     const response = document.getElementById('privateResponse');
     const p = document.createElement('p');
+    lastMessageFrom = message.from;
+
     p.style.overflowWrap = 'break-word';
     p.appendChild(document.createTextNode("(" + message.time + ")"
         + " " + message.from + ": " + message.text));
@@ -128,11 +134,11 @@ function showPrivateMessage(message) {
 
 function sendPrivateMessage() {
     const from = document.getElementById('name').value;
-    const to = document.getElementById('recipient').value;
+    const to = document.getElementById('recipients').value;
     const text = document.getElementById('privateText').value;
 
     stompClient.publish({
-        destination: "/app/private-chat",
+        destination: "/app/private",
         body: JSON.stringify({'from': from, 'text': text, 'to': to}),
     })
 
@@ -187,6 +193,19 @@ function showNotification(message) {
     });
 }
 
+function updateRecipientsList(activeUsers) {
+    const recipientSelect = document.getElementById('recipients');
+    const currentRecipient = recipientSelect.value;
+    recipientSelect.innerHTML = `<option value=''></option>`;
+    activeUsers.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user;
+        option.text = user;
+        option.selected = (user === currentRecipient);
+        recipientSelect.appendChild(option);
+    })
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     disconnect()
     document.querySelector('form').addEventListener('submit', (e) => {
@@ -198,11 +217,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('disconnect').addEventListener('click', () => {
         disconnect();
     })
-    document.getElementById('sendMessage').addEventListener('click', () => {
+    document.getElementById('sendPublicMessage').addEventListener('click', () => {
         sendPublicMessage();
     })
     document.getElementById('sendPrivateMessage').addEventListener('click', () => {
         sendPrivateMessage();
+    })
+    document.getElementById('recipients').addEventListener('click', () => {
+        stompClient.publish({
+            destination: "/app/active-users",
+        })
+    })
+    document.getElementById('recipients').addEventListener('change', (e) => {
+        if (e.target.value !== lastMessageFrom) {
+            document.getElementById('privateResponse').innerHTML = '';
+        }
     })
     document.getElementById('text').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {

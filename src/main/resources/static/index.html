@@ -29,7 +29,7 @@
             <form class="form-inline">
                 <div class="form-group">
                     <label for="name">Chose your nickname</label>
-                    <input type="text" id="name" class="form-control" placeholder="nickname...">
+                    <input type="text" id="name" class="form-control" placeholder="Nickname...">
                 </div>
             </form>
         </div>
@@ -53,7 +53,7 @@
                 <label for="text"></label>
                 <input type="file" id="imageInput" accept="image/*">
                 <input type="text" id="text" placeholder="Write a public message..."/>
-                <button id="sendMessage" class="btn btn-default" type="submit">Send</button>
+                <button id="sendPublicMessage" class="btn btn-default" type="submit">Send</button>
                 <p id="response"></p>
             </div>
         </div>
@@ -70,8 +70,10 @@
             </table>
             <div id="privateConversationDiv">
                 <div class="form-group">
-                    <label for="recipient">Recipient:</label>
-                    <input type="text" id="recipient" class="form-control" placeholder="Recipient's name..."/>
+                    <label for="recipients">Recipient's list:</label>
+                    <select id="recipients" class="form-control">
+                        <option value="" selected></option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="privateText"></label>

@@ -2,11 +2,11 @@ package pl.kurs.websocketapp.config;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -18,7 +18,8 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
-import pl.kurs.websocketapp.service.UserService;
+import pl.kurs.websocketapp.model.event.RegisterUserEvent;
+import pl.kurs.websocketapp.model.event.UnregisterUserEvent;
 
 import java.security.Principal;
 
@@ -26,7 +27,7 @@ import java.security.Principal;
 @RequiredArgsConstructor
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Bean
     public ServletServerContainerFactoryBean createWebSocketContainer() {
@@ -53,7 +54,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic");
+        registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");
     }
@@ -66,17 +67,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String username = accessor.getFirstNativeHeader("username");
-                    if (username == null || username.trim().isEmpty()) {
-                        throw new MessageDeliveryException("Username is required!");
-                    }
-                    if (!userService.addUser(username.trim())) {
-                        throw new MessageDeliveryException("Username is taken!");
-                    }
+                    eventPublisher.publishEvent(new RegisterUserEvent(username));
                     accessor.setUser(() -> username);
                 } else if (accessor != null && StompCommand.DISCONNECT.equals(accessor.getCommand())) {
                     Principal principal = accessor.getUser();
                     if (principal != null) {
-                        userService.removeUser(principal.getName());
+                        eventPublisher.publishEvent(new UnregisterUserEvent(principal.getName()));
                     }
                 }
                 return message;

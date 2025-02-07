@@ -28,7 +28,7 @@ public class WebSocketService {
 
         messagingTemplate.convertAndSendToUser(
                 privateMessage.getTo(),
-                "/topic/private-message",
+                "/queue/private",
                 messageOutput
         );
 

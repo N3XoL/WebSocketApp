@@ -1,8 +1,13 @@
 package pl.kurs.websocketapp.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.stereotype.Service;
+import pl.kurs.websocketapp.model.event.RegisterUserEvent;
+import pl.kurs.websocketapp.model.event.UnregisterUserEvent;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,11 +17,23 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserService {
     private final Set<String> activeUsers = ConcurrentHashMap.newKeySet();
 
-    public boolean addUser(String username) {
-        return activeUsers.add(username);
+    @EventListener
+    public void registerUserEvent(RegisterUserEvent event) {
+        String username = event.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            throw new MessageDeliveryException("Username is required!");
+        }
+        if (!activeUsers.add(username.trim())) {
+            throw new MessageDeliveryException("Username is taken!");
+        }
     }
 
-    public void removeUser(String username) {
-        activeUsers.remove(username);
+    @EventListener
+    public void unregisterUserEvent(UnregisterUserEvent event) {
+        activeUsers.remove(event.getUsername());
+    }
+
+    public Set<String> getActiveUsers() {
+        return Collections.unmodifiableSet(activeUsers);
     }
 }
