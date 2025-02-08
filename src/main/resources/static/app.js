@@ -232,12 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('privateResponse').innerHTML = '';
         }
     })
-    document.getElementById('text').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            sendPublicMessage();
-        }
-    })
 })
 document.addEventListener('visibilitychange', () => {
     isPageActive = !document.hidden
