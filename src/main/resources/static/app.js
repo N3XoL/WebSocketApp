@@ -84,7 +84,7 @@ function setConnected(connected) {
 }
 
 function connect() {
-    username = document.getElementById('name').value;
+    username = document.getElementById('name').value.trim();
     stompClient.connectHeaders = {
         'username': username
     };
@@ -103,17 +103,6 @@ function showPublicMessage(message) {
     p.style.overflowWrap = 'break-word';
     p.appendChild(document.createTextNode("(" + message.time + ")"
         + " " + message.from + ": " + message.text));
-
-    if (message.imageData) {
-        const image = document.createElement('img');
-        image.src = message.imageData;
-        image.style.maxWidth = '200px';
-        image.style.height = 'auto';
-        image.style.marginTop = '5px';
-        image.style.display = 'block';
-        p.appendChild(image);
-    }
-
     response.appendChild(p);
 }
 
@@ -127,6 +116,16 @@ function showPrivateMessage(message) {
         + " " + message.from + ": " + message.text));
     response.appendChild(p);
 
+    if (message.imageData) {
+        const image = document.createElement('img');
+        image.src = message.imageData;
+        image.style.maxWidth = '200px';
+        image.style.height = 'auto';
+        image.style.marginTop = '5px';
+        image.style.display = 'block';
+        p.appendChild(image);
+    }
+
     if (!isPageActive && message.from !== username) {
         showNotification(message)
     }
@@ -136,18 +135,6 @@ function sendPrivateMessage() {
     const from = document.getElementById('name').value;
     const to = document.getElementById('recipients').value;
     const text = document.getElementById('privateText').value;
-
-    stompClient.publish({
-        destination: "/app/private",
-        body: JSON.stringify({'from': from, 'text': text, 'to': to}),
-    })
-
-    document.getElementById('privateText').value = '';
-}
-
-function sendPublicMessage() {
-    const from = document.getElementById('name').value;
-    const text = document.getElementById('text').value;
     const imageInput = document.getElementById('imageInput');
     const imageFile = imageInput.files[0];
     let imageData = null;
@@ -158,22 +145,34 @@ function sendPublicMessage() {
         reader.onload = (e) => {
             imageData = e.target.result;
             fileName = imageFile.name;
-            sendMessageWithImage(from, text, imageData, fileName);
+            sendWithImage(from, text, to, imageData, fileName);
         };
         reader.readAsDataURL(imageFile);
     } else {
-        sendMessageWithImage(from, text, null, null);
+        sendWithImage(from, text, to, null);
     }
 
-    document.getElementById('text').value = '';
+    document.getElementById('privateText').value = '';
     document.getElementById('imageInput').value = '';
 }
 
-function sendMessageWithImage(from, text, imageData, fileName) {
+function sendPublicMessage() {
+    const from = document.getElementById('name').value;
+    const text = document.getElementById('text').value;
+
     stompClient.publish({
         destination: "/app/chat",
-        body: JSON.stringify({'from': from, 'text': text, 'imageData': imageData, 'fileName': fileName}),
-    })
+        body: JSON.stringify({ 'from': from, 'text': text })
+    });
+
+    document.getElementById('text').value = '';
+}
+
+function sendWithImage(from, text, to, imageData, fileName) {
+    stompClient.publish({
+        destination: "/app/private",
+        body: JSON.stringify({'from': from, 'text': text, 'to': to, 'imageData': imageData, 'fileName': fileName})
+    });
 }
 
 function getCurrentHost() {

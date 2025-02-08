@@ -13,4 +13,6 @@ public class PrivateMessage {
     private String text;
     private String from;
     private String to;
+    private String imageData;
+    private String fileName;
 }

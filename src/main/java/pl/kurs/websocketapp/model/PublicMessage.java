@@ -12,6 +12,4 @@ import lombok.Setter;
 public class PublicMessage {
     private String text;
     private String from;
-    private String imageData;
-    private String fileName;
 }

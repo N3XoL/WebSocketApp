@@ -23,7 +23,7 @@ public class WebSocketService {
                 HtmlUtils.htmlEscape(privateMessage.getFrom()),
                 HtmlUtils.htmlEscape(privateMessage.getText()),
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")),
-                null
+                privateMessage.getImageData()
         );
 
         messagingTemplate.convertAndSendToUser(
@@ -40,7 +40,7 @@ public class WebSocketService {
                 HtmlUtils.htmlEscape(publicMessage.getFrom()),
                 HtmlUtils.htmlEscape(publicMessage.getText()),
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")),
-                publicMessage.getImageData()
+                null
         );
     }
 }
