@@ -30,15 +30,29 @@ stompClient.onConnect = (frame) => {
     clearError()
     setConnected(true);
     console.log('Connected: ' + frame);
+
     stompClient.subscribe('/topic/messages', (message) => {
         showPublicMessage(JSON.parse(message.body));
     });
+
     stompClient.subscribe('/user/queue/private', (message) => {
         showPrivateMessage(JSON.parse(message.body));
-    })
-    stompClient.subscribe('/user/queue/active-users', (message) => {
+    });
+
+    stompClient.subscribe('/topic/active-users', (message) => {
         updateRecipientsList(JSON.parse(message.body));
+    });
+
+    stompClient.subscribe('/user/queue/private/invite', (message) => {
+        handlePrivateChatInvite(message.body);
+    });
+
+    stompClient.subscribe('/user/queue/private/response', (message) => {
+        handlePrivateChatResponse(JSON.parse(message.body));
     })
+
+    //Initial active users list
+    stompClient.publish({destination: '/app/active-users'});
 };
 
 stompClient.onWebSocketError = (error) => {
@@ -149,7 +163,7 @@ function sendPrivateMessage() {
         };
         reader.readAsDataURL(imageFile);
     } else {
-        sendWithImage(from, text, to, null);
+        sendWithImage(from, text, to, imageData, fileName);
     }
 
     document.getElementById('privateText').value = '';
@@ -162,7 +176,7 @@ function sendPublicMessage() {
 
     stompClient.publish({
         destination: "/app/chat",
-        body: JSON.stringify({ 'from': from, 'text': text })
+        body: JSON.stringify({'from': from, 'text': text})
     });
 
     document.getElementById('text').value = '';
@@ -197,12 +211,149 @@ function updateRecipientsList(activeUsers) {
     const currentRecipient = recipientSelect.value;
     recipientSelect.innerHTML = `<option value=''></option>`;
     activeUsers.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user;
-        option.text = user;
-        option.selected = (user === currentRecipient);
-        recipientSelect.appendChild(option);
+        if (user !== username) {
+            const option = document.createElement('option');
+            option.value = user;
+            option.text = user;
+            option.selected = (user === currentRecipient);
+            recipientSelect.appendChild(option);
+        }
     })
+}
+
+function sendPrivateChatInvite() {
+    const to = document.getElementById('recipients').value;
+    const recipientAlert = document.getElementById('recipientAlert');
+    const connect = document.getElementById('privateChatConnect');
+    const disconnect = document.getElementById('privateChatDisconnect');
+
+    recipientAlert.textContent = `Waiting for ${to} to accept an invite!`
+    recipientAlert.style.display = 'block';
+    recipientAlert.className = 'alert alert-info'
+    connect.disabled = true;
+    disconnect.disabled = false;
+
+    stompClient.publish({
+        destination: "/app/private/invite",
+        body: JSON.stringify({'from': username, 'to': to})
+    })
+}
+
+function handlePrivateChatInvite(inviteFrom) {
+    const modal = document.getElementById('chatInvitationModal')
+    const inviterName = document.getElementById('inviterName');
+    const acceptInvite = document.getElementById('acceptInvitation');
+    const declineInvite = document.getElementById('declineInvitation');
+    const recipients = document.getElementById('recipients');
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+    }
+
+    navigator.serviceWorker.ready.then(function (registration) {
+        registration.showNotification(`From: ${inviteFrom}`, {
+            body: 'Private chat invite!'
+        });
+    });
+
+    inviterName.textContent = inviteFrom;
+    modal.style.display = 'block';
+
+    acceptInvite.onclick = function () {
+        recipients.value = inviterName.textContent;
+        sendStatus("ACCEPT", inviterName.textContent);
+        closeModal();
+    }
+
+    declineInvite.onclick = function () {
+        sendStatus("DECLINE", inviterName.textContent);
+        closeModal();
+    }
+}
+
+function sendStatus(responseStatus, to) {
+    stompClient.publish({
+        destination: "/app/private/response",
+        body: JSON.stringify({'from': username, 'to': to, 'status': responseStatus})
+    })
+}
+
+function handlePrivateChatResponse(message) {
+    const otherUser = message.from === username ? message.to : message.from;
+    switch (message.status) {
+        case "ACCEPT": {
+            activatePrivateChat();
+            handleRecipientAlert(`You are chatting with ${otherUser}`, 'alert alert-success');
+            break;
+        }
+        case "DECLINE": {
+            if (message.from !== username) {
+                handleRecipientAlert(`${message.from} declined you invite!`, 'alert alert-danger')
+            }
+            break;
+        }
+        case "DISCONNECT": {
+            const modal = document.getElementById('chatInvitationModal')
+            deactivatePrivateChat();
+            if (modal.style.display !== 'none') {
+                handleRecipientAlert(`Invite cancelled!`, 'alert alert-danger');
+                modal.style.display = 'none';
+            } else {
+                handleRecipientAlert(`Disconnected!`, 'alert alert-danger');
+            }
+            break;
+        }
+    }
+}
+
+function handleRecipientAlert(text, className) {
+    const recipientAlert = document.getElementById('recipientAlert');
+    recipientAlert.style.display = 'block';
+    recipientAlert.textContent = text;
+    recipientAlert.className = className;
+}
+
+function activatePrivateChat() {
+    const imageInput = document.getElementById('imageInput');
+    const privateText = document.getElementById('privateText');
+    const sendPrivateMessage = document.getElementById('sendPrivateMessage');
+    const recipientAlert = document.getElementById('recipientAlert');
+    const connect = document.getElementById('privateChatConnect');
+    const disconnect = document.getElementById('privateChatDisconnect');
+
+    imageInput.style.display = 'block';
+    privateText.style.display = 'block';
+    sendPrivateMessage.style.display = 'block';
+    recipientAlert.style.display = 'block';
+    connect.disabled = true;
+    disconnect.disabled = false;
+}
+
+function deactivatePrivateChat() {
+    const imageInput = document.getElementById('imageInput');
+    const privateText = document.getElementById('privateText');
+    const sendPrivateMessage = document.getElementById('sendPrivateMessage');
+    const recipientAlert = document.getElementById('recipientAlert');
+    const connect = document.getElementById('privateChatConnect');
+    const disconnect = document.getElementById('privateChatDisconnect');
+    const recipients = document.getElementById('recipients');
+    const privateChat = document.getElementById('privateResponse');
+
+    imageInput.style.display = 'none';
+    privateText.style.display = 'none';
+    sendPrivateMessage.style.display = 'none';
+    recipientAlert.style.display = 'none';
+    recipientAlert.className = 'alert alert-info';
+    recipientAlert.textContent = '';
+    recipients.value = '';
+    privateChat.innerHTML = '';
+    connect.disabled = false;
+    disconnect.disabled = true;
+}
+
+function sendDisconnectStatus() {
+    const recipient = document.getElementById('recipients').value;
+    sendStatus("DISCONNECT", recipient);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -214,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         connect();
     })
     document.getElementById('disconnect').addEventListener('click', () => {
+        deactivatePrivateChat();
         disconnect();
     })
     document.getElementById('sendPublicMessage').addEventListener('click', () => {
@@ -222,17 +374,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sendPrivateMessage').addEventListener('click', () => {
         sendPrivateMessage();
     })
-    document.getElementById('recipients').addEventListener('click', () => {
-        stompClient.publish({
-            destination: "/app/active-users",
-        })
+    document.getElementById('privateChatConnect').addEventListener('click', () => {
+        sendPrivateChatInvite();
+    })
+    document.getElementById('privateChatDisconnect').addEventListener('click', () => {
+        sendDisconnectStatus();
+        deactivatePrivateChat();
+    })
+    document.addEventListener('visibilitychange', () => {
+        isPageActive = !document.hidden
     })
     document.getElementById('recipients').addEventListener('change', (e) => {
         if (e.target.value !== lastMessageFrom) {
             document.getElementById('privateResponse').innerHTML = '';
         }
     })
-})
-document.addEventListener('visibilitychange', () => {
-    isPageActive = !document.hidden
 })

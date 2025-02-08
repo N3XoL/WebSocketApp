@@ -73,14 +73,33 @@
                     <select id="recipients" class="form-control">
                         <option value="" selected></option>
                     </select>
+                    <div id="recipientAlert" class="alert alert-info" style="display: none;"></div>
+                    <button id="privateChatConnect" class="btn btn-default" type="submit">Connect</button>
+                    <button id="privateChatDisconnect" class="btn btn-default" type="submit" disabled="disabled">Disconnect</button>
                 </div>
                 <div class="form-group">
                     <label for="privateText"></label>
-                    <input type="file" id="imageInput" accept="image/*">
-                    <input type="text" id="privateText" class="form-control" placeholder="Write a private message..."/>
-                    <button id="sendPrivateMessage" class="btn btn-default" type="submit">Send</button>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                    <input type="text" id="privateText" class="form-control" style="display: none;" placeholder="Write a private message..."/>
+                    <button id="sendPrivateMessage" class="btn btn-default" type="submit" style="display: none;">Send</button>
                 </div>
                 <p id="privateResponse"></p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal" id="chatInvitationModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Private chat invitation!</h4>
+            </div>
+            <div class="modal-body">
+                <p id="invitationMessage">You received invite from <span id="inviterName"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="acceptInvitation">Accept</button>
+                <button type="button" class="btn" id="declineInvitation">Decline</button>
             </div>
         </div>
     </div>

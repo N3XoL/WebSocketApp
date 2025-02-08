@@ -5,14 +5,15 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
+import pl.kurs.websocketapp.model.ChatStatus;
 import pl.kurs.websocketapp.model.OutputMessage;
+import pl.kurs.websocketapp.model.PrivateChatInvite;
 import pl.kurs.websocketapp.model.PrivateMessage;
 import pl.kurs.websocketapp.model.PublicMessage;
 import pl.kurs.websocketapp.service.UserService;
 import pl.kurs.websocketapp.service.WebSocketService;
 
-import java.security.Principal;
-import java.util.List;
+import java.util.Set;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class WebSocketController {
     @MessageMapping("/chat")
     @SendTo("/topic/messages")
     public OutputMessage sendPublicMessage(PublicMessage publicMessage) {
-        return webSocketService.send(publicMessage);
+        return webSocketService.sendPublicMessage(publicMessage);
     }
 
     @MessageMapping("/private")
@@ -33,11 +34,19 @@ public class WebSocketController {
     }
 
     @MessageMapping("/active-users")
-    @SendToUser("/queue/active-users")
-    public List<String> getActiveUsers(Principal principal) {
-        return userService.getActiveUsers().stream()
-                .sorted()
-                .filter(username -> !username.equals(principal.getName()))
-                .toList();
+    @SendTo("/topic/active-users")
+    public Set<String> getActiveUsers() {
+        return userService.getActiveUsers();
+    }
+
+    @MessageMapping("/private/invite")
+    public void handlePrivateChatInvite(PrivateChatInvite privateChatInvite) {
+        webSocketService.handlePrivateChatInvite(privateChatInvite);
+    }
+
+    @MessageMapping("/private/response")
+    @SendToUser("/queue/private/response")
+    private ChatStatus handlePrivateChatInviteResponse(ChatStatus chatStatus) {
+        return webSocketService.handlePrivateChatStatusResponse(chatStatus);
     }
 }
