@@ -13,7 +13,7 @@ import pl.kurs.websocketapp.model.PublicMessage;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class WebSocketService {
     private final SimpMessagingTemplate messagingTemplate;
-    private final Set<String> usersInPrivateChat = ConcurrentHashMap.newKeySet();
+    private final Map<String, String> usersInPrivateChat = new ConcurrentHashMap<>();
 
     public OutputMessage sendToUser(PrivateMessage privateMessage) {
         OutputMessage messageOutput = new OutputMessage(
@@ -50,7 +50,10 @@ public class WebSocketService {
     }
 
     public void handlePrivateChatInvite(PrivateChatInvite privateChatInvite) {
-        if (usersInPrivateChat.contains(privateChatInvite.getFrom()) || usersInPrivateChat.contains(privateChatInvite.getTo())) {
+        if (usersInPrivateChat.containsKey(privateChatInvite.getFrom()) ||
+                usersInPrivateChat.containsKey(privateChatInvite.getTo()) ||
+                usersInPrivateChat.containsValue(privateChatInvite.getFrom()) ||
+                usersInPrivateChat.containsValue(privateChatInvite.getTo())) {
             messagingTemplate.convertAndSendToUser(
                     privateChatInvite.getFrom(),
                     "/queue/private/response",
@@ -67,11 +70,11 @@ public class WebSocketService {
 
     public ChatStatus handlePrivateChatStatusResponse(ChatStatus chatStatus) {
         if (chatStatus.getStatus().equals("ACCEPT")) {
-            usersInPrivateChat.add(chatStatus.getFrom());
-            usersInPrivateChat.add(chatStatus.getTo());
+            usersInPrivateChat.put(chatStatus.getFrom(), chatStatus.getTo());
         } else if (chatStatus.getStatus().equals("DISCONNECT")) {
-            usersInPrivateChat.remove(chatStatus.getFrom());
-            usersInPrivateChat.remove(chatStatus.getTo());
+            usersInPrivateChat.entrySet()
+                    .removeIf(entry -> entry.getValue().equals(chatStatus.getTo()) ||
+                            entry.getValue().equals(chatStatus.getFrom()));
         }
         messagingTemplate.convertAndSendToUser(
                 chatStatus.getTo(),
