@@ -54,7 +54,7 @@ public class WebSocketService {
             messagingTemplate.convertAndSendToUser(
                     privateChatInvite.getFrom(),
                     "/queue/private/response",
-                    new ChatStatus(privateChatInvite.getFrom(), privateChatInvite.getTo(), "CONNECT")
+                    new ChatStatus(privateChatInvite.getFrom(), privateChatInvite.getTo(), "BUSY")
             );
         } else {
             messagingTemplate.convertAndSendToUser(
@@ -78,9 +78,6 @@ public class WebSocketService {
                 "/queue/private/response",
                 chatStatus
         );
-        // for user itself
-        chatStatus.setFrom(chatStatus.getTo());
-        chatStatus.setTo(chatStatus.getFrom());
         return chatStatus;
     }
 }

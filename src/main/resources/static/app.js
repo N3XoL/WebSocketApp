@@ -285,17 +285,17 @@ function sendStatus(responseStatus, to) {
 }
 
 function handlePrivateChatResponse(message) {
-    const from = message.from;
-    const to = message.to;
+    const isReceiver = message.from !== username;
     switch (message.status) {
         case "ACCEPT": {
             activatePrivateChat();
-            handleRecipientAlert(`You are chatting with ${from}`, 'alert alert-success');
+            handleRecipientAlert(`You are chatting with ${isReceiver ? message.from : message.to}`, 'alert alert-success');
             break;
         }
         case "DECLINE": {
-            if (from !== username) {
-                handleRecipientAlert(`${to} declined you invite!`, 'alert alert-danger')
+            deactivatePrivateChat();
+            if (isReceiver) {
+                handleRecipientAlert(`${message.from} declined your invite!`, 'alert alert-danger')
             }
             break;
         }
@@ -303,16 +303,16 @@ function handlePrivateChatResponse(message) {
             const modal = document.getElementById('chatInvitationModal')
             deactivatePrivateChat();
             if (modal.style.display !== 'none') {
-                handleRecipientAlert(`Invite cancelled!`, 'alert alert-danger');
+                handleRecipientAlert(`Invitation was cancelled!`, 'alert alert-danger');
                 modal.style.display = 'none';
             } else {
                 handleRecipientAlert(`Disconnected!`, 'alert alert-danger');
             }
             break;
         }
-        case "CONNECT": {
+        case "BUSY": {
             deactivatePrivateChat();
-            handleRecipientAlert(`${to} is already in private chat!`, 'alert alert-danger');
+            handleRecipientAlert(`${message.to} is already in private chat!`, 'alert alert-danger');
             break;
         }
     }
