@@ -227,16 +227,22 @@ function sendPrivateChatInvite() {
     const connect = document.getElementById('privateChatConnect');
     const disconnect = document.getElementById('privateChatDisconnect');
 
-    recipientAlert.textContent = `Waiting for ${to} to accept an invite!`
     recipientAlert.style.display = 'block';
-    recipientAlert.className = 'alert alert-info'
-    connect.disabled = true;
-    disconnect.disabled = false;
 
-    stompClient.publish({
-        destination: "/app/private/invite",
-        body: JSON.stringify({'from': username, 'to': to})
-    })
+    if (!to) {
+        recipientAlert.className = 'alert alert-danger'
+        recipientAlert.textContent = 'Please select a recipient!';
+    } else {
+        recipientAlert.className = 'alert alert-info'
+        recipientAlert.textContent = `Waiting for ${to} to accept an invite!`
+        connect.disabled = true;
+        disconnect.disabled = false;
+
+        stompClient.publish({
+            destination: "/app/private/invite",
+            body: JSON.stringify({'from': username, 'to': to})
+        })
+    }
 }
 
 function handlePrivateChatInvite(inviteFrom) {
@@ -279,16 +285,17 @@ function sendStatus(responseStatus, to) {
 }
 
 function handlePrivateChatResponse(message) {
-    const otherUser = message.from === username ? message.to : message.from;
+    const from = message.from;
+    const to = message.to;
     switch (message.status) {
         case "ACCEPT": {
             activatePrivateChat();
-            handleRecipientAlert(`You are chatting with ${otherUser}`, 'alert alert-success');
+            handleRecipientAlert(`You are chatting with ${from}`, 'alert alert-success');
             break;
         }
         case "DECLINE": {
-            if (message.from !== username) {
-                handleRecipientAlert(`${message.from} declined you invite!`, 'alert alert-danger')
+            if (from !== username) {
+                handleRecipientAlert(`${to} declined you invite!`, 'alert alert-danger')
             }
             break;
         }
@@ -301,6 +308,11 @@ function handlePrivateChatResponse(message) {
             } else {
                 handleRecipientAlert(`Disconnected!`, 'alert alert-danger');
             }
+            break;
+        }
+        case "CONNECT": {
+            deactivatePrivateChat();
+            handleRecipientAlert(`${to} is already in private chat!`, 'alert alert-danger');
             break;
         }
     }

@@ -9,8 +9,10 @@ import pl.kurs.websocketapp.model.event.RegisterUserEvent;
 import pl.kurs.websocketapp.model.event.UnregisterUserEvent;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 //Simple implementation of user service, preferably database.
 @Service
@@ -42,6 +44,8 @@ public class UserService {
     }
 
     public Set<String> getActiveUsers() {
-        return Collections.unmodifiableSet(activeUsers);
+        return Collections.unmodifiableSet(activeUsers).stream()
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

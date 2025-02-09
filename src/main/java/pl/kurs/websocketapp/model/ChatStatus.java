@@ -1,8 +1,10 @@
 package pl.kurs.websocketapp.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class ChatStatus {
     private String from;
     private String to;

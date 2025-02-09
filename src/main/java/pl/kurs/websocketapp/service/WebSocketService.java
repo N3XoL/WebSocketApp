@@ -50,11 +50,19 @@ public class WebSocketService {
     }
 
     public void handlePrivateChatInvite(PrivateChatInvite privateChatInvite) {
-        messagingTemplate.convertAndSendToUser(
-                privateChatInvite.getTo(),
-                "/queue/private/invite",
-                privateChatInvite.getFrom()
-        );
+        if (usersInPrivateChat.contains(privateChatInvite.getFrom()) || usersInPrivateChat.contains(privateChatInvite.getTo())) {
+            messagingTemplate.convertAndSendToUser(
+                    privateChatInvite.getFrom(),
+                    "/queue/private/response",
+                    new ChatStatus(privateChatInvite.getFrom(), privateChatInvite.getTo(), "CONNECT")
+            );
+        } else {
+            messagingTemplate.convertAndSendToUser(
+                    privateChatInvite.getTo(),
+                    "/queue/private/invite",
+                    privateChatInvite.getFrom()
+            );
+        }
     }
 
     public ChatStatus handlePrivateChatStatusResponse(ChatStatus chatStatus) {
@@ -70,7 +78,9 @@ public class WebSocketService {
                 "/queue/private/response",
                 chatStatus
         );
-
+        // for user itself
+        chatStatus.setFrom(chatStatus.getTo());
+        chatStatus.setTo(chatStatus.getFrom());
         return chatStatus;
     }
 }
