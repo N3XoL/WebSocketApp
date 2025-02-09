@@ -128,6 +128,7 @@ function showPrivateMessage(message) {
     p.style.overflowWrap = 'break-word';
     p.appendChild(document.createTextNode("(" + message.time + ")"
         + " " + message.from + ": " + message.text));
+    p.id = crypto.randomUUID();
     response.appendChild(p);
 
     if (message.imageData) {
@@ -256,11 +257,13 @@ function handlePrivateChatInvite(inviteFrom) {
         modal.style.display = 'none';
     }
 
-    navigator.serviceWorker.ready.then(function (registration) {
-        registration.showNotification(`From: ${inviteFrom}`, {
-            body: 'Private chat invite!'
+    if (!isPageActive && inviteFrom.textContent !== username) {
+        navigator.serviceWorker.ready.then(function (registration) {
+            registration.showNotification(`From: ${inviteFrom}`, {
+                body: 'Private chat invite!'
+            });
         });
-    });
+    }
 
     inviterName.textContent = inviteFrom;
     modal.style.display = 'block';
@@ -301,11 +304,11 @@ function handlePrivateChatResponse(message) {
         }
         case "DISCONNECT": {
             const modal = document.getElementById('chatInvitationModal')
-            deactivatePrivateChat();
             if (modal.style.display !== 'none') {
+                deactivatePrivateChat();
                 handleRecipientAlert(`Invitation was cancelled!`, 'alert alert-danger');
-                modal.style.display = 'none';
             } else {
+                deactivatePrivateChat();
                 handleRecipientAlert(`Disconnected!`, 'alert alert-danger');
             }
             break;
@@ -377,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         connect();
     })
     document.getElementById('disconnect').addEventListener('click', () => {
+        sendDisconnectStatus()
         deactivatePrivateChat();
         disconnect();
     })
