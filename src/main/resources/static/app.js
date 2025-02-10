@@ -128,7 +128,6 @@ function showPrivateMessage(message) {
     p.style.overflowWrap = 'break-word';
     p.appendChild(document.createTextNode("(" + message.time + ")"
         + " " + message.from + ": " + message.text));
-    p.id = crypto.randomUUID();
     response.appendChild(p);
 
     if (message.imageData) {
