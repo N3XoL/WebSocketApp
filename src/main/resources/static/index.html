@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hello WebSocket</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <script src="/app.js"></script>
+</head>
+<body>
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript being
+    enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div id="main-content" class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="connect">WebSocket connection:</label>
+                    <button id="connect" class="btn btn-default" type="submit">Connect</button>
+                    <button id="disconnect" class="btn btn-default" type="submit" disabled="disabled">Disconnect
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="name">Chose your nickname</label>
+                    <input type="text" id="name" class="form-control" placeholder="Nickname...">
+                </div>
+            </form>
+        </div>
+        <div class="col-md-12">
+            <div id="errorMessage" class="alert alert-danger" style="display: none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Public Chat</h3>
+            <table id="conversation" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Chat</th>
+                </tr>
+                </thead>
+                <tbody id="chat">
+                </tbody>
+            </table>
+            <div id="conversationDiv">
+                <label for="text"></label>
+                <input type="text" id="text" placeholder="Write a public message..."/>
+                <button id="sendPublicMessage" class="btn btn-default" type="submit">Send</button>
+                <p id="response"></p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h3>Private Chat</h3>
+            <table id="privateConversation" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Private Chat</th>
+                </tr>
+                </thead>
+                <tbody id="privateChat">
+                </tbody>
+            </table>
+            <div id="privateConversationDiv">
+                <div class="form-group">
+                    <label for="recipients">Recipient's list:</label>
+                    <select id="recipients" class="form-control">
+                        <option value="" selected></option>
+                    </select>
+                    <div id="recipientAlert" class="alert alert-info" style="display: none;"></div>
+                    <button id="privateChatConnect" class="btn btn-default" type="submit">Connect</button>
+                    <button id="privateChatDisconnect" class="btn btn-default" type="submit" disabled="disabled">Disconnect</button>
+                </div>
+                <div class="form-group">
+                    <label for="privateText"></label>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                    <input type="text" id="privateText" class="form-control" style="display: none;" placeholder="Write a private message..."/>
+                    <button id="sendPrivateMessage" class="btn btn-default" type="submit" style="display: none;">Send</button>
+                </div>
+                <p id="privateResponse"></p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal" id="chatInvitationModal" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Private chat invitation!</h4>
+            </div>
+            <div class="modal-body">
+                <p id="invitationMessage">You received invite from <span id="inviterName"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="acceptInvitation">Accept</button>
+                <button type="button" class="btn" id="declineInvitation">Decline</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
